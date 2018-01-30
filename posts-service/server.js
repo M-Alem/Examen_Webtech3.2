@@ -6,7 +6,7 @@ const MongoClient = require('mongodb').MongoClient
 
 var db
 
-MongoClient.connect('mongodb://localhost:27017/products', (err, database) => {
+MongoClient.connect('mongodb://localhost:27017/posts', (err, database) => {
   if (err) return console.log(err)
   db = database // from version 3 : db = database.db('products')
   app.listen(process.env.PORT || 4000, () => {
@@ -14,8 +14,10 @@ MongoClient.connect('mongodb://localhost:27017/products', (err, database) => {
   })
 })
 
+app.set('view engine', 'ejs')
 app.use(bodyParser.urlencoded({extended: true}))
 app.use(bodyParser.json())
+app.use(express.static('public'))
 
 // to resolve the CORS error
 // https://medium.com/@ahsan.ayaz/how-to-handle-cors-in-an-angular2-and-node-express-applications-eb3de412abef
@@ -32,36 +34,41 @@ var corsOptions = {
 
 app.use(cors(corsOptions));
 
-// list all products
+// list all posts
 app.get('/list', (req, res) => {
-  db.collection('products').find().toArray((err, result) => {
-    if (err) throw err
-    res.json(result)
+  db.collection('posts').find().toArray((err, result) => {
+    if (err) throw console.log(err)
+    res.render('list.ejs', {posts: title, body})
   })
 })
 
-// add a product to the db
+// Show the add posts form
+app.get('/add', (req, res) => {
+   res.render('add.ejs', {})
+})
+
+// add a post to the db
 app.post('/add', (req, res) => {
-  db.collection('products').save(req.body, (err, result) => {
+  db.collection('posts').save(req.body, (err, result) => {
      if (err) throw err
   })
 })
 
-// find a product
+// find a post
 app.post('/search', (req, res) => {
  var query = { name: req.body.name }
- db.collection('products').find(query).toArray(function(err, result) {
-   if (err) throw err
+ db.collection('posts').find(query).toArray(function(err, result) {
+   if (err) return console.log(err)
    if (result == '')
-       res.json({})
+       res.render('search_not_found.ejs', {})
    else
-       res.json(result[0])
+       res.render('search_result.ejs', { product: result[0] })
  });
 })
 
-// delete a product
+// delete a post
 app.post('/delete', (req, res) => {
-  db.collection('products').findOneAndDelete({name: req.body.name}, (err, result) => {
+  db.collection('posts').findOneAndDelete({name: req.body.name}, (err, result) => {
     if (err) throw err
   })
 })
